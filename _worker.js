@@ -834,6 +834,7 @@ function createVLESSSub(userID_Path, hostName) {
 
 	// Generate output string for each userID
 	userIDArray.forEach((userID) => {
+		var data = get_cloud_flare_v4();
 		// Check if the hostName is a Cloudflare Pages domain, if not, generate HTTP configurations
 		// reasons: pages.dev not support http only https
 		if (!hostName.includes('pages.dev')) {
@@ -843,8 +844,8 @@ function createVLESSSub(userID_Path, hostName) {
 				const vlessMainHttp = `vless://${userID}@${hostName}${commonUrlPart_http}`;
 
 				// For each proxy IP, generate a VLESS configuration and add to output
-				proxyIPs.forEach((proxyIP) => {
-					const vlessSecHttp = `vless://${userID}@${proxyIP}${commonUrlPart_http}-${proxyIP}-EDtunnel`;
+				data.forEach((item) => {
+					const vlessSecHttp = `vless://${userID}@${proxyIP}${item.address}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
 					output.push(`${vlessMainHttp}`);
 					output.push(`${vlessSecHttp}`);
 				});
@@ -856,8 +857,8 @@ function createVLESSSub(userID_Path, hostName) {
 			const vlessMainHttps = `vless://${userID}@${hostName}${commonUrlPart_https}`;
 
 			// For each proxy IP, generate a VLESS configuration and add to output
-			proxyIPs.forEach((proxyIP) => {
-				const vlessSecHttps = `vless://${userID}@${proxyIP}${commonUrlPart_https}-${proxyIP}-EDtunnel`;
+			data.forEach((item) => {
+				const vlessSecHttps = `vless://${userID}@${item.address}${commonUrlPart_https}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
 				output.push(`${vlessMainHttps}`);
 				output.push(`${vlessSecHttps}`);
 			});
@@ -867,4 +868,21 @@ function createVLESSSub(userID_Path, hostName) {
 	// Join output with newlines
 	return output.join('\n');
 }
-
+/**
+ * 进行GET或POST请求
+ * @param {Request} request
+ */
+function get_cloud_flare_v4(){
+    var url="https://monitor.gacjie.cn/api/ajax/get_cloud_flare_v4?page=1&limit=10";
+    const res = await fetch(url,
+    {
+        method: 'get',
+        headers:{
+          'accept': 'application/json, text/javascript, */*; q=0.01',
+          'user-agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0',
+        }
+    });
+    var html = await res.text();
+    var data = JSON.parse(html);
+    return data.data;
+}
