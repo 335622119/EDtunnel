@@ -8,6 +8,8 @@ let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
 const proxyIPs = ['cdn-all.xn--b6gac.eu.org', 'cdn.xn--b6gac.eu.org', 'cdn-b100.xn--b6gac.eu.org', 'edgetunnel.anycast.eu.org', 'cdn.anycast.eu.org'];
 
+let cloud_flare_v4_data = [];
+
 let proxyIP = proxyIPs[Math.floor(Math.random() * proxyIPs.length)];
 
 let dohURL = 'https://sky.rethinkdns.com/1:-Pf_____9_8A_AMAIgE8kMABVDDmKOHTAKg='; // https://cloudflare-dns.com/dns-query or https://dns.google/dns-query
@@ -61,6 +63,9 @@ export default {
 					case `/sub/${userID_Path}`: {
 						const url = new URL(request.url);
 						const searchParams = url.searchParams;
+
+            await get_cloud_flare_v4();
+
 						let vlessConfig = createVLESSSub(userID, request.headers.get('Host'));
 
 						// If 'format' query param equals to 'clash', convert config to base64
@@ -306,7 +311,25 @@ async function handleTCPOutBound(remoteSocket, addressRemote, portRemote, rawCli
 	// remote--> ws
 	remoteSocketToWS(tcpSocket, webSocket, vlessResponseHeader, retry, log);
 }
-
+/**
+ * 进行GET或POST请求
+ * @param {Request} request
+ */
+async function get_cloud_flare_v4(){
+  var url="https://monitor.gacjie.cn/api/ajax/get_cloud_flare_v4?page=1&limit=10";
+  const res = await fetch(url,
+  {
+      method: 'get',
+      headers:{
+        'accept': 'application/json, text/javascript, */*; q=0.01',
+        'user-agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0',
+      }
+  });
+  var html = await res.text();
+  var data = JSON.parse(html);
+  cloud_flare_v4_data = data.data;
+  return data.data;
+}
 /**
  * Creates a readable stream from a WebSocket server, allowing for data to be read from the WebSocket.
  * @param {import("@cloudflare/workers-types").WebSocket} webSocketServer The WebSocket server to create the readable stream from.
@@ -822,7 +845,7 @@ function getVLESSConfig(userIDs, hostName) {
 }
 
 
-function createVLESSSub(userID_Path, hostName) {
+async function createVLESSSub(userID_Path, hostName) {
 	let portArray_http = [80, 8080, 8880, 2052, 2086, 2095, 2082];
 	let portArray_https = [443, 8443, 2053, 2096, 2087, 2083];
 
@@ -834,7 +857,6 @@ function createVLESSSub(userID_Path, hostName) {
 
 	// Generate output string for each userID
 	userIDArray.forEach((userID) => {
-		var data = await get_cloud_flare_v4();
 		// Check if the hostName is a Cloudflare Pages domain, if not, generate HTTP configurations
 		// reasons: pages.dev not support http only https
 		if (!hostName.includes('pages.dev')) {
@@ -844,7 +866,7 @@ function createVLESSSub(userID_Path, hostName) {
 				const vlessMainHttp = `vless://${userID}@${hostName}${commonUrlPart_http}`;
 
 				// For each proxy IP, generate a VLESS configuration and add to output
-				data.forEach((item) => {
+				cloud_flare_v4_data.forEach((item) => {
 					const vlessSecHttp = `vless://${userID}@${proxyIP}${item.address}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
 					output.push(`${vlessMainHttp}`);
 					output.push(`${vlessSecHttp}`);
@@ -857,7 +879,7 @@ function createVLESSSub(userID_Path, hostName) {
 			const vlessMainHttps = `vless://${userID}@${hostName}${commonUrlPart_https}`;
 
 			// For each proxy IP, generate a VLESS configuration and add to output
-			data.forEach((item) => {
+			cloud_flare_v4_data.forEach((item) => {
 				const vlessSecHttps = `vless://${userID}@${item.address}${commonUrlPart_https}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
 				output.push(`${vlessMainHttps}`);
 				output.push(`${vlessSecHttps}`);
@@ -867,22 +889,4 @@ function createVLESSSub(userID_Path, hostName) {
 
 	// Join output with newlines
 	return output.join('\n');
-}
-/**
- * 进行GET或POST请求
- * @param {Request} request
- */
-async function get_cloud_flare_v4(){
-    var url="https://monitor.gacjie.cn/api/ajax/get_cloud_flare_v4?page=1&limit=10";
-    const res = await fetch(url,
-    {
-        method: 'get',
-        headers:{
-          'accept': 'application/json, text/javascript, */*; q=0.01',
-          'user-agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0',
-        }
-    });
-    var html = await res.text();
-    var data = JSON.parse(html);
-    return data.data;
 }
