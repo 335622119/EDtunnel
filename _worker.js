@@ -834,7 +834,7 @@ function createVLESSSub(userID_Path, hostName) {
 
 	// Generate output string for each userID
 	userIDArray.forEach((userID) => {
-		var data = get_cloud_flare_v4();
+		var data = await get_cloud_flare_v4();
 		// Check if the hostName is a Cloudflare Pages domain, if not, generate HTTP configurations
 		// reasons: pages.dev not support http only https
 		if (!hostName.includes('pages.dev')) {
@@ -872,7 +872,7 @@ function createVLESSSub(userID_Path, hostName) {
  * 进行GET或POST请求
  * @param {Request} request
  */
-function get_cloud_flare_v4(){
+async function get_cloud_flare_v4(){
     var url="https://monitor.gacjie.cn/api/ajax/get_cloud_flare_v4?page=1&limit=10";
     const res = await fetch(url,
     {
