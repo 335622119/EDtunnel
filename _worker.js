@@ -863,12 +863,12 @@ function createVLESSSub(userID_Path, hostName) {
 		if (!hostName.includes('pages.dev')) {
 			// Iterate over all ports for http
 			portArray_http.forEach((port) => {
-				const commonUrlPart_http = `:${port}?encryption=none&security=none&fp=random&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}-HTTP-${port}`;
+				const commonUrlPart_http = `:${port}?encryption=none&security=none&fp=random&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#`;
 				const vlessMainHttp = `vless://${userID}@${hostName}${commonUrlPart_http}`;
 
 				// For each proxy IP, generate a VLESS configuration and add to output
 				cloud_flare_v4_data.forEach((item) => {
-					const vlessSecHttp = `vless://${userID}@${proxyIP}${item.address}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
+					const vlessSecHttp = `vless://${userID}@${item.address}${commonUrlPart_http}${item.device_name}-${port}-HTTP-${item.colo}-${item.delay}-${item.speed}-${item.address}-${hostName}`;
 					output.push(`${vlessMainHttp}`);
 					output.push(`${vlessSecHttp}`);
 				});
@@ -881,7 +881,7 @@ function createVLESSSub(userID_Path, hostName) {
 
 			// For each proxy IP, generate a VLESS configuration and add to output
 			cloud_flare_v4_data.forEach((item) => {
-				const vlessSecHttps = `vless://${userID}@${item.address}${commonUrlPart_https}-${item.address}-${item.device_name}-${item.colo}-${item.delay}-${item.speed}`;
+				const vlessSecHttps = `vless://${userID}@${item.address}${commonUrlPart_https}${item.device_name}-${port}-HTTPS-${item.colo}-${item.delay}-${item.speed}-${item.address}-${hostName}`;
 				output.push(`${vlessMainHttps}`);
 				output.push(`${vlessSecHttps}`);
 			});
